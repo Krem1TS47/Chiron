@@ -1,0 +1,63 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "chiron"
+version = "0.1.0"
+description = "NBA Fantasy analytics platform with CV, ML, and Power BI integration"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.32.0",
+    "sqlalchemy>=2.0.36",
+    "alembic>=1.14.0",
+    "psycopg2-binary>=2.9.10",
+    "pydantic>=2.10.0",
+    "pydantic-settings>=2.6.0",
+    "pandas>=2.2.3",
+    "numpy>=2.1.0",
+    "scikit-learn>=1.5.2",
+    "xgboost>=2.1.2",
+    "opencv-python-headless>=4.10.0",
+    "pillow>=11.0.0",
+    "matplotlib>=3.9.0",
+    "nba_api>=1.5.0",
+    "playwright>=1.49.0",
+    "httpx>=0.28.0",
+    "prometheus-client>=0.21.0",
+    "pyyaml>=6.0.2",
+    "jinja2>=3.1.4",
+    "shap>=0.46.0",
+    "seaborn>=0.13.2",
+    "joblib>=1.4.2",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.3.0",
+    "pytest-asyncio>=0.24.0",
+    "ruff>=0.8.0",
+    "httpx>=0.28.0",
+]
+
+[project.scripts]
+chiron-ingest = "chiron.ingestion.runner:main"
+chiron-cv = "chiron.cv.runner:main"
+chiron-train = "chiron.ml.train.trainer:main"
+chiron-pipeline = "chiron.pipeline:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]

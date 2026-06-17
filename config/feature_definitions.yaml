@@ -1,0 +1,45 @@
+version: "1.0"
+
+normalization:
+  per_36_metrics:
+    - points
+    - rebounds
+    - assists
+    - steals
+    - blocks
+    - turnovers
+  z_score_by_position:
+    - points_per_36
+    - rebounds_per_36
+    - assists_per_36
+    - usage_pct
+
+custom_metrics:
+  effort_score:
+    weights:
+      stocks: 0.25
+      rebounds_per_36: 0.20
+      minutes_trend: 0.20
+      shot_dispersion: 0.15
+      fouls_drawn_per_36: 0.20
+  overall_shooting_score:
+    weights:
+      efg_pct: 0.30
+      ts_pct: 0.25
+      zone_efficiency_score: 0.25
+      ft_rate: 0.20
+  usage_efficiency:
+    formula: "points / max(usage_pct, 0.01)"
+  fantasy_volatility:
+    window: 10
+    metric: "fantasy_points_std"
+
+feature_selection:
+  correlation_threshold: 0.95
+  variance_threshold: 0.01
+  top_k_univariate: 40
+
+training:
+  test_season_start: "2024-10-01"
+  simulation_samples: 500
+  quantiles: [0.1, 0.5, 0.9]

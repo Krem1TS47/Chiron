@@ -1,0 +1,105 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-chiron}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-chiron}
+      POSTGRES_DB: ${POSTGRES_DB:-chiron}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./powerbi/views.sql:/views/views.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-chiron}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  postgres-exporter:
+    image: prometheuscommunity/postgres-exporter:v0.15.0
+    environment:
+      DATA_SOURCE_NAME: postgresql://${POSTGRES_USER:-chiron}:${POSTGRES_PASSWORD:-chiron}@postgres:5432/${POSTGRES_DB:-chiron}?sslmode=disable
+    ports:
+      - "9187:9187"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  migrate:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-chiron}:${POSTGRES_PASSWORD:-chiron}@postgres:5432/${POSTGRES_DB:-chiron}
+    command: alembic upgrade head
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-chiron}:${POSTGRES_PASSWORD:-chiron}@postgres:5432/${POSTGRES_DB:-chiron}
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./models:/app/models
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  pipeline:
+    build:
+      context: .
+      dockerfile: Dockerfile.pipeline
+    profiles:
+      - pipeline
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-chiron}:${POSTGRES_PASSWORD:-chiron}@postgres:5432/${POSTGRES_DB:-chiron}
+      NBA_SEASON: ${NBA_SEASON:-2024-25}
+      INGEST_PLAYER_LIMIT: ${INGEST_PLAYER_LIMIT:-50}
+      ESPN_LEAGUE_ID: ${ESPN_LEAGUE_ID:-}
+      ESPN_SWID: ${ESPN_SWID:-}
+      ESPN_S2: ${ESPN_S2:-}
+    volumes:
+      - ./models:/app/models
+      - ./artifacts:/app/artifacts
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+
+  prometheus:
+    image: prom/prometheus:v2.54.1
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    depends_on:
+      - api
+      - postgres-exporter
+
+  grafana:
+    image: grafana/grafana:11.2.0
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - grafana_data:/var/lib/grafana
+    depends_on:
+      - prometheus
+
+volumes:
+  postgres_data:
+  grafana_data:

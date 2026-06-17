@@ -1,0 +1,51 @@
+name: Scrape and Train
+
+on:
+  schedule:
+    - cron: "0 8 * * *"
+  workflow_dispatch:
+    inputs:
+      player_limit:
+        description: "Max players to ingest"
+        required: false
+        default: "50"
+
+jobs:
+  pipeline:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Start Postgres
+        run: |
+          docker compose up -d postgres
+          timeout 60 bash -c 'until docker compose exec -T postgres pg_isready -U chiron; do sleep 2; done'
+
+      - name: Build and run pipeline
+        env:
+          INGEST_PLAYER_LIMIT: ${{ github.event.inputs.player_limit || '50' }}
+          NBA_SEASON: "2024-25"
+        run: |
+          docker compose --profile pipeline build pipeline
+          docker compose run --rm migrate
+          docker compose --profile pipeline run --rm pipeline
+
+      - name: Apply Power BI views
+        run: |
+          docker compose exec -T postgres psql -U chiron -d chiron -f /views/views.sql
+
+      - name: Upload EDA artifacts
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: eda-report
+          path: artifacts/eda/
+          if-no-files-found: ignore
+
+      - name: Upload models
+        uses: actions/upload-artifact@v4
+        if: success()
+        with:
+          name: trained-models
+          path: models/
+          if-no-files-found: ignore
