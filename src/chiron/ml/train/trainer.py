@@ -80,7 +80,7 @@ def run_training() -> dict:
     X, all_features, y = build_feature_matrix(df)
     selected_features, selection_meta = select_features(X, y)
 
-    split_date = config.get("training", {}).get("test_season_start", "2024-10-01")
+    split_date = config.get("training", {}).get("test_season_start", "2025-10-01")
     train_df, test_df = _time_split(df, split_date)
     X_train = train_df[selected_features].fillna(0)
     y_train = train_df["fantasy_points"].fillna(0)

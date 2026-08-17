@@ -64,9 +64,10 @@ services:
       - pipeline
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-chiron}:${POSTGRES_PASSWORD:-chiron}@postgres:5432/${POSTGRES_DB:-chiron}
-      NBA_SEASON: ${NBA_SEASON:-2024-25}
+      NBA_SEASON: ${NBA_SEASON:-}
       INGEST_PLAYER_LIMIT: ${INGEST_PLAYER_LIMIT:-50}
       ESPN_LEAGUE_ID: ${ESPN_LEAGUE_ID:-}
+      ESPN_SEASON: ${ESPN_SEASON:-}
       ESPN_SWID: ${ESPN_SWID:-}
       ESPN_S2: ${ESPN_S2:-}
     volumes:

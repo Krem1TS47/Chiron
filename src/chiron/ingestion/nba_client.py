@@ -11,8 +11,11 @@ from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.orm import Session
 
 from chiron.db.models import Game, Player, PlayerGameStat, ShotEvent
+from chiron.ingestion.nba_http import with_retry
 from chiron.ingestion.schemas import FantasyScoringRules, PlayerGameStatSchema, ShotEventSchema
 from chiron.ingestion.utils import rate_limit
+
+NBA_API_TIMEOUT = 60
 
 logger = logging.getLogger(__name__)
 
@@ -60,7 +63,12 @@ def fetch_active_players(limit: int | None = None) -> list[dict]:
 
 def fetch_player_info(player_id: int) -> dict:
     rate_limit()
-    info = commonplayerinfo.CommonPlayerInfo(player_id=player_id).get_normalized_dict()
+    info = with_retry(
+        lambda: commonplayerinfo.CommonPlayerInfo(
+            player_id=player_id,
+            timeout=NBA_API_TIMEOUT,
+        ).get_normalized_dict()
+    )
     rows = info.get("CommonPlayerInfo", [])
     if not rows:
         return {"id": player_id, "full_name": str(player_id), "team_abbrev": None, "position": None}
@@ -86,8 +94,13 @@ def _parse_game_date(value: str | None) -> date:
 
 def fetch_player_game_logs(player_id: int, season: str) -> list[tuple[PlayerGameStatSchema, date]]:
     rate_limit()
-    endpoint = playergamelog.PlayerGameLog(player_id=player_id, season=season)
-    data = endpoint.get_normalized_dict()
+    data = with_retry(
+        lambda: playergamelog.PlayerGameLog(
+            player_id=player_id,
+            season=season,
+            timeout=NBA_API_TIMEOUT,
+        ).get_normalized_dict()
+    )
     rows = data.get("PlayerGameLog", [])
     stats: list[tuple[PlayerGameStatSchema, date]] = []
     for row in rows:
@@ -139,13 +152,15 @@ def fetch_player_game_logs(player_id: int, season: str) -> list[tuple[PlayerGame
 
 def fetch_shot_events(player_id: int, season: str) -> list[ShotEventSchema]:
     rate_limit()
-    endpoint = shotchartdetail.ShotChartDetail(
-        player_id=player_id,
-        team_id=0,
-        season_nullable=season,
-        context_measure_simple="FGA",
+    data = with_retry(
+        lambda: shotchartdetail.ShotChartDetail(
+            player_id=player_id,
+            team_id=0,
+            season_nullable=season,
+            context_measure_simple="FGA",
+            timeout=NBA_API_TIMEOUT,
+        ).get_normalized_dict()
     )
-    data = endpoint.get_normalized_dict()
     rows = data.get("Shot_Chart_Detail", [])
     events: list[ShotEventSchema] = []
     for idx, row in enumerate(rows):

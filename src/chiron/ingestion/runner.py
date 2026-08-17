@@ -6,6 +6,7 @@ from chiron.config import get_settings
 from chiron.db.session import get_session_factory
 from chiron.ingestion.espn_client import fetch_league_settings, parse_scoring_rules
 from chiron.ingestion.nba_client import fetch_active_players, ingest_player
+from chiron.ingestion.nba_http import configure_nba_http
 from chiron.ingestion.utils import update_pipeline_metadata
 
 logging.basicConfig(
@@ -17,6 +18,8 @@ logger = logging.getLogger(__name__)
 
 def run_ingestion(player_limit: int | None = None) -> dict:
     settings = get_settings()
+    backend = configure_nba_http()
+    logger.info("NBA HTTP backend=%s season=%s", backend, settings.nba_season)
     session = get_session_factory()()
     total = {"players": 0, "games": 0, "stats": 0, "shots": 0, "errors": 0}
 

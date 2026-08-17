@@ -40,6 +40,6 @@ feature_selection:
   top_k_univariate: 40
 
 training:
-  test_season_start: "2024-10-01"
+  test_season_start: "2025-10-01"
   simulation_samples: 500
   quantiles: [0.1, 0.5, 0.9]

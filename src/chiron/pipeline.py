@@ -2,9 +2,7 @@ import argparse
 import logging
 import sys
 
-from chiron.cv.runner import run_cv_pipeline
 from chiron.ingestion.runner import run_ingestion
-from chiron.ml.train.trainer import run_training
 
 logging.basicConfig(
     level=logging.INFO,
@@ -27,17 +25,25 @@ def main() -> None:
         logger.info("Ingestion: %s", ingest_result)
         if ingest_result.get("errors", 0) > 0:
             logger.warning("Ingestion completed with errors")
+        if ingest_result.get("stats", 0) == 0:
+            logger.error("Ingestion produced no game stats; aborting pipeline")
+            sys.exit(1)
 
     if not args.skip_cv:
+        from chiron.cv.runner import run_cv_pipeline
+
         logger.info("=== CV Pipeline ===")
         cv_result = run_cv_pipeline()
         logger.info("CV: %s", cv_result)
 
     if not args.skip_train:
+        from chiron.ml.train.trainer import run_training
+
         logger.info("=== Training ===")
         train_result = run_training()
         logger.info("Training: %s", train_result)
         if train_result.get("status") == "no_data":
+            logger.error("Training has no player-game rows")
             sys.exit(1)
 
     logger.info("Pipeline complete")
