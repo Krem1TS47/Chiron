@@ -11,10 +11,14 @@ COPY src ./src
 COPY config ./config
 COPY alembic ./alembic
 COPY alembic.ini .
+COPY powerbi ./powerbi
+COPY scripts/api-entrypoint.sh /app/scripts/api-entrypoint.sh
 
 RUN pip install --no-cache-dir .
 RUN python -c "import xgboost"
+RUN chmod +x /app/scripts/api-entrypoint.sh
 
 EXPOSE 8000
 
-CMD ["uvicorn", "chiron.api.main:app", "--host", "0.0.0.0", "--port", "8000"]
+ENTRYPOINT ["/app/scripts/api-entrypoint.sh"]
+CMD ["sh", "-c", "uvicorn chiron.api.main:app --host 0.0.0.0 --port ${PORT:-8000}"]

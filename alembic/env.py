@@ -1,12 +1,12 @@
 import logging
-from datetime import datetime
 
 from sqlalchemy import engine_from_config, pool
 
 from alembic import context
 from chiron.config import get_settings
-from chiron.db.base import Base
 from chiron.db import models  # noqa: F401
+from chiron.db.base import Base
+from chiron.db.session import normalize_database_url
 
 config = context.config
 logging.basicConfig(level=logging.INFO)
@@ -16,7 +16,7 @@ target_metadata = Base.metadata
 
 
 def get_url() -> str:
-    return get_settings().database_url
+    return normalize_database_url(get_settings().database_url)
 
 
 def run_migrations_offline() -> None:

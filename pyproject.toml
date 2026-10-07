@@ -47,9 +47,13 @@ chiron-ingest = "chiron.ingestion.runner:main"
 chiron-cv = "chiron.cv.runner:main"
 chiron-train = "chiron.ml.train.trainer:main"
 chiron-pipeline = "chiron.pipeline:main"
+chiron-apply-views = "chiron.db.views:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
+
+[tool.setuptools.package-data]
+"chiron.web" = ["templates/*.html", "static/*"]
 
 [tool.ruff]
 line-length = 100

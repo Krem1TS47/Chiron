@@ -14,13 +14,18 @@ jobs:
     pipeline:
         runs-on: ubuntu-latest
         timeout-minutes: 90
+        env:
+            DATABASE_URL: ${{ secrets.DATABASE_URL }}
+            INGEST_PLAYER_LIMIT: ${{ github.event.inputs.player_limit || '50' }}
         steps:
             - uses: actions/checkout@v4
 
-            - name: Start Postgres
+            - name: Require hosted DATABASE_URL
               run: |
-                  docker compose up -d postgres
-                  timeout 60 bash -c 'until docker compose exec -T postgres pg_isready -U chiron; do sleep 2; done'
+                  if [ -z "$DATABASE_URL" ]; then
+                    echo "Set the DATABASE_URL GitHub secret to the Render Postgres external URL."
+                    exit 1
+                  fi
 
             - name: Build images
               run: |
@@ -28,16 +33,13 @@ jobs:
                   docker compose --profile pipeline build pipeline
 
             - name: Run migrations
-              run: docker compose run --rm migrate
+              run: docker compose run --no-deps --rm migrate
 
             - name: Run scrape, CV, and train
-              env:
-                  INGEST_PLAYER_LIMIT: ${{ github.event.inputs.player_limit || '50' }}
-              run: docker compose --profile pipeline run --rm pipeline
+              run: docker compose --profile pipeline run --no-deps --rm pipeline
 
             - name: Apply Power BI views
-              run: |
-                  docker compose exec -T postgres psql -U chiron -d chiron -f /views/views.sql
+              run: docker compose run --no-deps --rm migrate chiron-apply-views
 
             - name: Upload EDA artifacts
               uses: actions/upload-artifact@v4

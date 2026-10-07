@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block title %}{% if player %}{{ player.full_name }}{% else %}Player{% endif %} · Chiron{% endblock %}
+{% block content %}
+<p class="crumb"><a href="/">Dashboard</a> / Player</p>
+
+{% if unavailable %}
+<h1>Player {{ player_id }}</h1>
+<p class="empty">Database is unavailable. Try again after the API can reach Postgres.</p>
+{% else %}
+<h1>{{ player.full_name }}</h1>
+<p class="sub">{{ player.team_abbrev or "FA" }} · {{ player.position or "—" }} · ID {{ player.id }}</p>
+
+<section>
+    <h2>Fantasy projections</h2>
+    {% if projections %}
+    <table>
+        <thead>
+            <tr>
+                <th>Game</th>
+                <th>p10</th>
+                <th>p50</th>
+                <th>p90</th>
+                <th>Mean</th>
+                <th>Std</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for p in projections %}
+            <tr>
+                <td>{{ p.game_id }}</td>
+                <td>{{ "%.1f"|format(p.p10) if p.p10 is not none else "—" }}</td>
+                <td>{{ "%.1f"|format(p.p50) if p.p50 is not none else "—" }}</td>
+                <td>{{ "%.1f"|format(p.p90) if p.p90 is not none else "—" }}</td>
+                <td>{{ "%.1f"|format(p.sim_mean) if p.sim_mean is not none else "—" }}</td>
+                <td>{{ "%.1f"|format(p.sim_std) if p.sim_std is not none else "—" }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p class="empty">No projections for this player yet.</p>
+    {% endif %}
+</section>
+
+<section>
+    <h2>CV features</h2>
+    {% if cv_features %}
+    <table>
+        <thead>
+            <tr>
+                <th>As of</th>
+                <th>Window</th>
+                <th>Zone eff.</th>
+                <th>Hot zone</th>
+                <th>Dispersion</th>
+                <th>Rim pressure</th>
+                <th>L/R bias</th>
+                <th>CV score</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for c in cv_features %}
+            <tr>
+                <td>{{ c.as_of_date }}</td>
+                <td>{{ c.window_games }}</td>
+                <td>{{ "%.3f"|format(c.zone_efficiency_score) if c.zone_efficiency_score is not none else "—" }}</td>
+                <td>{{ "%.3f"|format(c.hot_zone_density) if c.hot_zone_density is not none else "—" }}</td>
+                <td>{{ "%.3f"|format(c.shot_dispersion) if c.shot_dispersion is not none else "—" }}</td>
+                <td>{{ "%.3f"|format(c.rim_pressure_index) if c.rim_pressure_index is not none else "—" }}</td>
+                <td>{{ "%.3f"|format(c.left_right_bias) if c.left_right_bias is not none else "—" }}</td>
+                <td>{{ "%.3f"|format(c.cv_overall_shooting_score) if c.cv_overall_shooting_score is not none else "—" }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p class="empty">No CV features for this player yet.</p>
+    {% endif %}
+</section>
+{% endif %}
+{% endblock %}

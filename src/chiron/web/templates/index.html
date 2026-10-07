@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}Chiron dashboard{% endblock %}
+{% block content %}
+<section class="hero">
+    <h1>NBA fantasy dashboard</h1>
+    <p>Simulated fantasy points, shot-chart CV features, and the latest trained model.</p>
+</section>
+
+<section>
+    <h2>Latest model</h2>
+    {% if model_run %}
+    <dl class="metrics">
+        <div><dt>Name</dt><dd>{{ model_run.model_name }}</dd></div>
+        <div><dt>Version</dt><dd>{{ model_run.model_version }}</dd></div>
+        <div><dt>Trained</dt><dd>{{ model_run.trained_at }}</dd></div>
+        <div><dt>Test MAE</dt><dd>{{ model_run.metrics.get("test_mae", "—") if model_run.metrics else "—" }}</dd></div>
+        <div><dt>Test RMSE</dt><dd>{{ model_run.metrics.get("test_rmse", "—") if model_run.metrics else "—" }}</dd></div>
+    </dl>
+    {% else %}
+    <p class="empty">No active model run yet. Run the scrape-and-train pipeline.</p>
+    {% endif %}
+</section>
+
+<section>
+    <h2>Pipeline freshness</h2>
+    {% if pipelines %}
+    <table>
+        <thead>
+            <tr>
+                <th>Pipeline</th>
+                <th>Status</th>
+                <th>Last success</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for p in pipelines %}
+            <tr>
+                <td>{{ p.pipeline_name }}</td>
+                <td>{{ p.last_status or "—" }}</td>
+                <td>{{ p.last_success_at or "—" }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p class="empty">No pipeline metadata yet.</p>
+    {% endif %}
+</section>
+
+<section>
+    <h2>Players</h2>
+    {% if players %}
+    <table>
+        <thead>
+            <tr>
+                <th>Player</th>
+                <th>Team</th>
+                <th>Pos</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for player in players %}
+            <tr>
+                <td><a href="/players/{{ player.id }}">{{ player.full_name }}</a></td>
+                <td>{{ player.team_abbrev or "—" }}</td>
+                <td>{{ player.position or "—" }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% else %}
+    <p class="empty">No players ingested yet.</p>
+    {% endif %}
+</section>
+{% endblock %}

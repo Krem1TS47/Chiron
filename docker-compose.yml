@@ -31,7 +31,7 @@ services:
       context: .
       dockerfile: Dockerfile.api
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER:-chiron}:${POSTGRES_PASSWORD:-chiron}@postgres:5432/${POSTGRES_DB:-chiron}
+      DATABASE_URL: ${DATABASE_URL:-postgresql://chiron:chiron@postgres:5432/chiron}
     command: alembic upgrade head
     depends_on:
       postgres:
@@ -42,7 +42,7 @@ services:
       context: .
       dockerfile: Dockerfile.api
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER:-chiron}:${POSTGRES_PASSWORD:-chiron}@postgres:5432/${POSTGRES_DB:-chiron}
+      DATABASE_URL: ${DATABASE_URL:-postgresql://chiron:chiron@postgres:5432/chiron}
     ports:
       - "8000:8000"
     volumes:
@@ -63,7 +63,7 @@ services:
     profiles:
       - pipeline
     environment:
-      DATABASE_URL: postgresql://${POSTGRES_USER:-chiron}:${POSTGRES_PASSWORD:-chiron}@postgres:5432/${POSTGRES_DB:-chiron}
+      DATABASE_URL: ${DATABASE_URL:-postgresql://chiron:chiron@postgres:5432/chiron}
       NBA_SEASON: ${NBA_SEASON:-}
       INGEST_PLAYER_LIMIT: ${INGEST_PLAYER_LIMIT:-50}
       ESPN_LEAGUE_ID: ${ESPN_LEAGUE_ID:-}

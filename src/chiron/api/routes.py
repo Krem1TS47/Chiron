@@ -2,10 +2,46 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from chiron.db.models import CVFeature, EngineeredFeature, FantasyProjection, ModelRun, Player
+from chiron.db.models import (
+    CVFeature,
+    EngineeredFeature,
+    FantasyProjection,
+    ModelRun,
+    PipelineMetadata,
+    Player,
+)
 from chiron.db.session import get_db
 
 router = APIRouter()
+
+
+@router.get("/players")
+def list_players(db: Session = Depends(get_db)):
+    players = db.scalars(select(Player).order_by(Player.full_name)).all()
+    return [
+        {
+            "id": p.id,
+            "full_name": p.full_name,
+            "team_abbrev": p.team_abbrev,
+            "position": p.position,
+        }
+        for p in players
+    ]
+
+
+@router.get("/pipeline/status")
+def pipeline_status(db: Session = Depends(get_db)):
+    rows = db.scalars(select(PipelineMetadata).order_by(PipelineMetadata.pipeline_name)).all()
+    return [
+        {
+            "pipeline_name": row.pipeline_name,
+            "last_status": row.last_status,
+            "last_success_at": row.last_success_at.isoformat() if row.last_success_at else None,
+            "details": row.details,
+            "updated_at": row.updated_at.isoformat() if row.updated_at else None,
+        }
+        for row in rows
+    ]
 
 
 @router.get("/players/{player_id}/projections")
